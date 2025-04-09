@@ -1,0 +1,16 @@
+datasource db {
+  provider = "postgresql"  // ปรับให้ตรงกับฐานข้อมูลที่คุณใช้ เช่น "mysql", "sqlite"
+  url      = env("DATABASE_URL")  // Prisma จะดึงค่าจากไฟล์ .env
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ตัวอย่าง Model ที่จะใช้ในฐานข้อมูล
+model User {
+  id        Int    @id @default(autoincrement())
+  name      String
+  email     String @unique
+  createdAt DateTime @default(now())
+}
