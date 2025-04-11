@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",               // ใช้ NodeNext เพื่อรองรับ ES Modules ใน Node.js
+    "esModuleInterop": true,            // ใช้การ interoperable กับ CommonJS
+    "moduleResolution": "nodenext",     // ให้ Node.js หาทางโมดูลด้วยวิธี "nodenext"
+    "noImplicitReturns": true,          // แจ้งเตือนถ้าฟังก์ชันไม่มีการคืนค่า
+    "noUnusedLocals": true,             // แจ้งเตือนถ้าพบตัวแปรที่ไม่ได้ใช้
+    "outDir": "./lib",                  // ผลลัพธ์ที่คอมไพล์จะถูกเก็บไว้ที่โฟลเดอร์ lib
+    "sourceMap": true,                  // สร้าง source map สำหรับการดีบัก
+    "strict": true,                     // เปิดใช้ strict mode
+    "target": "es2017"                  // กำหนด target JavaScript version เป็น ES2017
+  },
+  "compileOnSave": true,                // คอมไพล์ทุกครั้งที่บันทึกไฟล์
+  "include": [
+    "src/**/*"                           // รวมไฟล์ทั้งหมดในโฟลเดอร์ src
+  ],
+  "exclude": [
+    "node_modules"                       // ไม่รวมโฟลเดอร์ node_modules
+  ]
+}
