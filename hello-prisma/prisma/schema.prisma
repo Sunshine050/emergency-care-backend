@@ -9,8 +9,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// prisma/schema.prisma
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  name  String?
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
+
+enum Role {
+  USER
+  EMERGENCY_CENTER
+  HOSPITAL
+  RESCUE
+}
+
