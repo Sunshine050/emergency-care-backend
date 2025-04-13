@@ -20,9 +20,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  // ✅ ดึงข้อมูลโปรไฟล์ของผู้ใช้ด้วย userId
   async getProfile(userId: string): Promise<User> {
     const supabase = this.supabaseService.getClient();
-
     const { data, error }: { data: User | null; error: any } = await supabase
       .from('users')
       .select('*')
@@ -39,35 +39,39 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<{ token: string }> {
     const supabase = this.supabaseService.getClient();
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    const { data, error }: { data: User[] | null; error: any } = await supabase
+  
+    const validRoles = ['user', '1669', 'hospital', 'rescue_team'];
+    if (!validRoles.includes(dto.role)) {
+      throw new HttpException('Invalid role', HttpStatus.BAD_REQUEST);
+    }
+  
+    const { data, error } = await supabase
       .from('users')
       .insert([
         {
           name: dto.name,
           email: dto.email,
           password: hashedPassword,
+          role: dto.role,
         },
       ])
       .select();
-
+  
     if (error || !data || data.length === 0) {
       console.error('Register error:', error);
-      throw new HttpException('Failed to register user', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Failed to register user',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-
+  
     const user: User = data[0];
-    const token = await this.jwtService.signAsync(
-      {
-        id: user.id,
-        role: user.role,
-      },
-      { expiresIn: '1h' },
-    );
-
+    const token = await this.generateJwtToken(user);
     return { token };
   }
+  
 
+  // ✅ เข้าสู่ระบบแบบ Email/Password
   async login(dto: LoginDto): Promise<{ token: string }> {
     const supabase = this.supabaseService.getClient();
 
@@ -77,39 +81,25 @@ export class AuthService {
       .eq('email', dto.email)
       .single();
 
-    if (error || !data) {
+    if (error || !data || !data.password) {
       throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
     }
 
-    const user: User = data;
-
-    if (!user.password) {
-      throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
-    }
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(dto.password, data.password);
     if (!isPasswordValid) {
       throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
     }
 
-    const token = await this.jwtService.signAsync(
-      {
-        id: user.id,
-        role: user.role,
-      },
-      { expiresIn: '1h' },
-    );
-
+    const token = await this.generateJwtToken(data);
     return { token };
   }
 
-  // ✅ ฟังก์ชันเข้าสู่ระบบด้วย Google OAuth
+  // ✅ เข้าสู่ระบบด้วยบัญชี Google
   async loginWithGoogle(profile: any): Promise<{ token: string }> {
     const supabase = this.supabaseService.getClient();
 
-    console.log('Google Profile:', profile); // Log ข้อมูลที่ได้รับจาก Google
-
-    // ตรวจสอบว่าผู้ใช้นี้มีอยู่ในฐานข้อมูลหรือยัง
-    const { data: user, error }: { data: User | null; error: any } = await supabase
+    // ค้นหาผู้ใช้จากอีเมล
+    const { data: user, error } = await supabase
       .from('users')
       .select('*')
       .eq('email', profile.email)
@@ -118,43 +108,42 @@ export class AuthService {
     let finalUser: User;
 
     if (!user || error) {
-      // ถ้ายังไม่มี, ให้สร้างใหม่
-      console.log('Creating new user for email:', profile.email); // Log การสร้างผู้ใช้ใหม่
-      const { data: newUserData, error: insertError } = await supabase
+      // หากไม่พบผู้ใช้ ให้สร้างใหม่
+      const { data: newUser, error: insertError } = await supabase
         .from('users')
         .insert([
           {
             email: profile.email,
             name: profile.name || profile.email,
-            password: '', // ไม่มีรหัสผ่าน
+            password: '', // ไม่มีรหัสผ่านเพราะใช้ Google OAuth
             role: 'user',
           },
         ])
         .select()
         .single();
 
-      if (insertError || !newUserData) {
-        console.error('Error creating user:', insertError); // Log ข้อผิดพลาดในการสร้างผู้ใช้
+      if (insertError || !newUser) {
+        console.error('Error creating user:', insertError);
         throw new HttpException('Failed to create user via Google login', HttpStatus.BAD_REQUEST);
       }
 
-      finalUser = newUserData;
+      finalUser = newUser;
     } else {
       finalUser = user;
-      console.log('User found:', finalUser); // Log ข้อมูลผู้ใช้ที่พบในฐานข้อมูล
     }
 
-    // ออก JWT token
-    const token = await this.jwtService.signAsync(
+    const token = await this.generateJwtToken(finalUser);
+    return { token };
+  }
+
+  // ✅ ฟังก์ชันช่วยออก JWT Token
+  private async generateJwtToken(user: User): Promise<string> {
+    return this.jwtService.signAsync(
       {
-        id: finalUser.id,
-        role: finalUser.role,
+        id: user.id,
+        role: user.role,
       },
       { expiresIn: '1h' },
     );
-
-    console.log('Generated JWT Token for user:', finalUser.id); // Log การออก JWT token
-
-    return { token };
   }
 }

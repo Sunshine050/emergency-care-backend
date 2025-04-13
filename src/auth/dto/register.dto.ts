@@ -1,16 +1,19 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
-import { Role } from '@prisma/client';
+// register.dto.ts
+import { IsEmail, IsNotEmpty, IsString, IsIn } from 'class-validator';
 
 export class RegisterDto {
+  @IsNotEmpty()
   @IsString()
   name: string;
 
   @IsEmail()
   email: string;
 
-  @MinLength(6)
+  @IsNotEmpty()
+  @IsString()
   password: string;
 
-  @IsOptional()
-  role?: Role;
+  @IsString()
+  @IsIn(['user', '1669', 'hospital', 'rescue_team']) // ✅ จำกัด role
+  role: string;
 }

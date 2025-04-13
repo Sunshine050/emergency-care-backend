@@ -2,14 +2,26 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import * as session from 'express-session';
-import * as passport from 'passport'; // เพิ่ม passport
+import * as passport from 'passport';
+import { ValidationPipe } from '@nestjs/common';
 
 dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // เพิ่ม session middleware
+  // ✅ Global Validation (ตรวจสอบ DTO)
+  app.useGlobalPipes(new ValidationPipe());
+
+  // ✅ Enable CORS ให้ React Native เรียกใช้ API ได้
+  app.enableCors({
+    origin: 'http://192.168.198.1:8081', // หรือระบุ origin เฉพาะ เช่น 'http://localhost:8081'
+    methods: 'GET,POST,PUT,DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+    credentials: true, 
+  });
+
+  // ✅ Session Middleware
   app.use(
     session({
       secret: process.env.SESSION_SECRET || 'some-secret',
@@ -18,10 +30,11 @@ async function bootstrap() {
     }),
   );
 
-  // ใช้ passport สำหรับการจัดการ session
+  // ✅ ใช้ passport
   app.use(passport.initialize());
   app.use(passport.session());
 
-  await app.listen(process.env.PORT ?? 3000);
+  // ✅ Run server
+  await app.listen(process.env.PORT || 3000, '0.0.0.0');
 }
 void bootstrap();
