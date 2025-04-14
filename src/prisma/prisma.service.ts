@@ -2,26 +2,27 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy {
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
-    try {
-      await this.$connect();
-      console.log('Successfully connected to the database');
-    } catch (error) {
-      console.error('Failed to connect to the database:', error);
-      throw error;
-    }
+    await this.$connect();
+    console.log('[Prisma] Successfully connected to the database');
   }
 
   async onModuleDestroy() {
-    try {
+    await this.$disconnect();
+    console.log('[Prisma] Successfully disconnected from the database');
+  }
+
+  // optional: ใช้เพื่อให้ shutdown hook ของ Nest เรียก disconnect
+  async enableShutdownHooks() {
+    process.on('SIGINT', async () => {
       await this.$disconnect();
-      console.log('Successfully disconnected from the database');
-    } catch (error) {
-      console.error('Failed to disconnect from the database:', error);
-      throw error;
-    }
+      console.log('[Prisma] Gracefully shutdown (SIGINT)');
+    });
+
+    process.on('SIGTERM', async () => {
+      await this.$disconnect();
+      console.log('[Prisma] Gracefully shutdown (SIGTERM)');
+    });
   }
 }

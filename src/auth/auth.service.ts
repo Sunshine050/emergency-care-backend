@@ -23,7 +23,8 @@ export class AuthService {
   async getProfile(userId: string): Promise<User> {
     console.log('📌 [getProfile] Called with userId:', userId);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.client;
+
     const { data, error }: { data: User | null; error: any } = await supabase
       .from('users')
       .select('*')
@@ -52,9 +53,8 @@ export class AuthService {
       role: dto.role,
     });
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.client;
 
-    // 🔐 ป้องกันการใช้ Email ซ้ำ
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
@@ -67,7 +67,6 @@ export class AuthService {
     }
 
     if (checkError && checkError.code !== 'PGRST116') {
-      // รหัส error บางอันเป็น expected (เช่น ไม่เจอ) ก็ข้ามไปได้
       console.error('❌ [register] Error checking existing email:', checkError);
       throw new HttpException(
         'Failed to check existing user',
@@ -120,7 +119,7 @@ export class AuthService {
   ): Promise<{ access_token: string; user: Omit<User, 'password'> }> {
     console.log('📌 [login] Called with email:', dto.email);
 
-    const supabase = this.supabaseService.getClient();
+    const supabase = this.supabaseService.client;
 
     const { data, error }: { data: User | null; error: any } = await supabase
       .from('users')
@@ -175,5 +174,10 @@ export class AuthService {
       access_token,
       user: userWithoutPassword,
     };
+  }
+
+  async validateOrCreateGoogleUser() {
+    const token = this.jwtService.sign({ sub: 'googleUserId' });
+    return { token };
   }
 }

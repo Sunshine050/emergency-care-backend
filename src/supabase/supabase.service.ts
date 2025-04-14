@@ -5,13 +5,23 @@ config();
 
 @Injectable()
 export class SupabaseService {
-  private readonly supabase: SupabaseClient;
+  public client: SupabaseClient;
 
   constructor() {
-    this.supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
-  }
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
 
-  getClient(): SupabaseClient {
-    return this.supabase;
+    // Logging for debug
+    console.log('✅ Supabase URL:', supabaseUrl);
+    console.log('✅ Supabase Key exists:', !!supabaseKey);
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Missing SUPABASE_URL or SUPABASE_KEY in .env');
+      throw new Error('Supabase config missing');
+    }
+
+    this.client = createClient(supabaseUrl, supabaseKey);
+
+    console.log('✅ Supabase client created successfully');
   }
 }

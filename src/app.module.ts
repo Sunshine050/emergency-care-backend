@@ -3,7 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
-import { SupabaseModule } from './supabase/supabase.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 
@@ -14,8 +13,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
     PrismaModule,
     UserModule,
-    SupabaseModule,
-    AuthModule,
+    AuthModule, // นำเข้า AuthModule ถูกต้องแล้ว
   ],
   controllers: [AppController],
   providers: [AppService],
