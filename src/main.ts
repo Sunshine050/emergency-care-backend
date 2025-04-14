@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import * as session from 'express-session';
 import * as passport from 'passport';
 import { ValidationPipe } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ async function bootstrap() {
     origin: 'http://192.168.198.1:8081', // หรือระบุ origin เฉพาะ เช่น 'http://localhost:8081'
     methods: 'GET,POST,PUT,DELETE',
     allowedHeaders: 'Content-Type, Authorization',
-    credentials: true, 
+    credentials: true,
   });
 
   // ✅ Session Middleware
@@ -33,6 +34,7 @@ async function bootstrap() {
   // ✅ ใช้ passport
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(cookieParser());
 
   // ✅ Run server
   await app.listen(process.env.PORT || 3000, '0.0.0.0');

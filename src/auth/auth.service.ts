@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
@@ -20,8 +20,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // ✅ ดึงข้อมูลโปรไฟล์ของผู้ใช้ด้วย userId
   async getProfile(userId: string): Promise<User> {
+    console.log('📌 [getProfile] Called with userId:', userId);
+
     const supabase = this.supabaseService.getClient();
     const { data, error }: { data: User | null; error: any } = await supabase
       .from('users')
@@ -30,22 +31,59 @@ export class AuthService {
       .single();
 
     if (error || !data) {
+      console.error('❌ [getProfile] User not found or error:', error);
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
+
+    console.log('✅ [getProfile] Found user:', {
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      role: data.role,
+    });
 
     return data;
   }
 
-  async register(dto: RegisterDto): Promise<{ token: string }> {
+  async register(dto: RegisterDto): Promise<Omit<User, 'password'>> {
+    console.log('📌 [register] Called with:', {
+      email: dto.email,
+      name: dto.name,
+      role: dto.role,
+    });
+
     const supabase = this.supabaseService.getClient();
+
+    // 🔐 ป้องกันการใช้ Email ซ้ำ
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', dto.email)
+      .single();
+
+    if (existingUser) {
+      console.warn('⚠️ [register] Email already in use:', dto.email);
+      throw new HttpException('Email already registered', HttpStatus.CONFLICT);
+    }
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      // รหัส error บางอันเป็น expected (เช่น ไม่เจอ) ก็ข้ามไปได้
+      console.error('❌ [register] Error checking existing email:', checkError);
+      throw new HttpException(
+        'Failed to check existing user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-  
+
     const validRoles = ['user', '1669', 'hospital', 'rescue_team'];
     if (!validRoles.includes(dto.role)) {
+      console.warn('⚠️ [register] Invalid role:', dto.role);
       throw new HttpException('Invalid role', HttpStatus.BAD_REQUEST);
     }
-  
-    const { data, error } = await supabase
+
+    const { data, error }: { data: User[] | null; error: any } = await supabase
       .from('users')
       .insert([
         {
@@ -56,23 +94,32 @@ export class AuthService {
         },
       ])
       .select();
-  
-    if (error || !data || data.length === 0) {
-      console.error('Register error:', error);
+
+    if (error || !data || data.length === 0 || !data[0]) {
+      console.error('❌ [register] Register error:', error);
       throw new HttpException(
         'Failed to register user',
         HttpStatus.BAD_REQUEST,
       );
     }
-  
-    const user: User = data[0];
-    const token = await this.generateJwtToken(user);
-    return { token };
-  }
-  
 
-  // ✅ เข้าสู่ระบบแบบ Email/Password
-  async login(dto: LoginDto): Promise<{ token: string }> {
+    const user = data[0];
+    console.log('✅ [register] Registered user:', {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
+
+    const { ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async login(
+    dto: LoginDto,
+  ): Promise<{ access_token: string; user: Omit<User, 'password'> }> {
+    console.log('📌 [login] Called with email:', dto.email);
+
     const supabase = this.supabaseService.getClient();
 
     const { data, error }: { data: User | null; error: any } = await supabase
@@ -81,69 +128,52 @@ export class AuthService {
       .eq('email', dto.email)
       .single();
 
-    if (error || !data || !data.password) {
-      throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
+    if (error || !data) {
+      console.warn('⚠️ [login] Email not found or error:', error);
+      throw new HttpException(
+        'Invalid email or password',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, data.password);
-    if (!isPasswordValid) {
-      throw new HttpException('Invalid credentials', HttpStatus.BAD_REQUEST);
+    const user = data;
+
+    if (!user.password) {
+      console.error('❌ [login] User has no password set');
+      throw new HttpException(
+        'Password not found for user',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
-    const token = await this.generateJwtToken(data);
-    return { token };
-  }
-
-  // ✅ เข้าสู่ระบบด้วยบัญชี Google
-  async loginWithGoogle(profile: any): Promise<{ token: string }> {
-    const supabase = this.supabaseService.getClient();
-
-    // ค้นหาผู้ใช้จากอีเมล
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', profile.email)
-      .single();
-
-    let finalUser: User;
-
-    if (!user || error) {
-      // หากไม่พบผู้ใช้ ให้สร้างใหม่
-      const { data: newUser, error: insertError } = await supabase
-        .from('users')
-        .insert([
-          {
-            email: profile.email,
-            name: profile.name || profile.email,
-            password: '', // ไม่มีรหัสผ่านเพราะใช้ Google OAuth
-            role: 'user',
-          },
-        ])
-        .select()
-        .single();
-
-      if (insertError || !newUser) {
-        console.error('Error creating user:', insertError);
-        throw new HttpException('Failed to create user via Google login', HttpStatus.BAD_REQUEST);
-      }
-
-      finalUser = newUser;
-    } else {
-      finalUser = user;
+    const isPasswordMatch = await bcrypt.compare(dto.password, user.password);
+    if (!isPasswordMatch) {
+      console.warn('⚠️ [login] Incorrect password');
+      throw new HttpException(
+        'Invalid email or password',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
-    const token = await this.generateJwtToken(finalUser);
-    return { token };
-  }
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
 
-  // ✅ ฟังก์ชันช่วยออก JWT Token
-  private async generateJwtToken(user: User): Promise<string> {
-    return this.jwtService.signAsync(
-      {
-        id: user.id,
-        role: user.role,
-      },
-      { expiresIn: '1h' },
-    );
+    const access_token = await this.jwtService.signAsync(payload);
+
+    console.log('✅ [login] Login successful:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const { ...userWithoutPassword } = user;
+
+    return {
+      access_token,
+      user: userWithoutPassword,
+    };
   }
 }

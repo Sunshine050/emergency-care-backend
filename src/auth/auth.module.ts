@@ -1,15 +1,17 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { SupabaseModule } from '../supabase/supabase.module';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './jwt.strategy';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtStrategy } from './jwt.strategy';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { SupabaseModule } from '../supabase/supabase.module';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
+    PassportModule,
     ConfigModule.forRoot(), // โหลด .env
     SupabaseModule,
     JwtModule.registerAsync({
@@ -24,6 +26,6 @@ import { GoogleStrategy } from './strategies/google.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PrismaService, GoogleStrategy],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, PrismaService],
 })
 export class AuthModule {}
