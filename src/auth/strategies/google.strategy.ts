@@ -39,12 +39,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const picture = photos?.[0]?.value || '';
 
     // ตรวจสอบว่าผู้ใช้มีอยู่ในฐานข้อมูลหรือไม่
-    const { data: existingUser, error: selectError } =
-      await this.supabaseService.client
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
+    const { data: existingUser, error: selectError } = await this.supabaseService.client
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
 
     if (selectError) {
       console.error('Error fetching user from Supabase:', selectError.message);
@@ -53,24 +52,19 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
     // ถ้าผู้ใช้ยังไม่มีในฐานข้อมูล Supabase ก็ให้เพิ่มใหม่
     if (!existingUser) {
-      const { error: insertError } = await this.supabaseService.client
-        .from('users')
-        .insert([
-          {
-            email,
-            first_name: firstName,
-            last_name: lastName,
-            avatar_url: picture,
-            provider: 'google',
-            role: 'user', // กำหนด role ให้กับผู้ใช้ใหม่
-          },
-        ]);
+      const { error: insertError } = await this.supabaseService.client.from('users').insert([
+        {
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          avatar_url: picture,
+          provider: 'google',
+          role: 'user', // กำหนด role ให้กับผู้ใช้ใหม่
+        },
+      ]);
 
       if (insertError) {
-        console.error(
-          'Error inserting user into Supabase:',
-          insertError.message,
-        );
+        console.error('Error inserting user into Supabase:', insertError.message);
         throw new Error('Failed to insert user into Supabase');
       }
     }

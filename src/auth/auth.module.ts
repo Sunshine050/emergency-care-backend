@@ -27,12 +27,6 @@ import { GoogleStrategy } from './strategies/google.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    JwtAuthGuard,
-    PrismaService,
-    GoogleStrategy,
-  ],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, PrismaService, GoogleStrategy],
 })
 export class AuthModule {}

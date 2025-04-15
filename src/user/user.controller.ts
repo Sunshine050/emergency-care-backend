@@ -4,7 +4,6 @@ import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('user')
 export class UserController {
-
   @Get('profile')
   @Roles('user')
   @UseGuards(RolesGuard)
@@ -13,7 +12,7 @@ export class UserController {
   }
 
   @Get('admin')
-  @Roles('admin')  // ผู้ใช้ต้องเป็น 'admin'
+  @Roles('admin') // ผู้ใช้ต้องเป็น 'admin'
   @UseGuards(RolesGuard)
   getAdminData() {
     return 'This is admin data';

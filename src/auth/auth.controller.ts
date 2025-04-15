@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService, User } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -34,9 +25,7 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(
-    @Body() dto: LoginDto,
-  ): Promise<{ access_token: string; user: Omit<User, 'password'> }> {
+  async login(@Body() dto: LoginDto): Promise<{ access_token: string; user: Omit<User, 'password'> }> {
     try {
       console.log('Attempting to login user:', dto);
       const { access_token, user } = await this.authService.login(dto);
@@ -50,9 +39,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfileWithAuth(
-    @Req() req: Request,
-  ): Promise<Omit<User, 'password'>> {
+  async getProfileWithAuth(@Req() req: Request): Promise<Omit<User, 'password'>> {
     const user = req.user as { sub: string } | undefined;
     if (!user) {
       console.error('User information is missing in the request.');
@@ -71,9 +58,7 @@ export class AuthController {
   }
 
   @Get('profile/:id')
-  async getProfile(
-    @Param('id') userId: string,
-  ): Promise<Omit<User, 'password'>> {
+  async getProfile(@Param('id') userId: string): Promise<Omit<User, 'password'>> {
     console.log('Fetching profile for userId:', userId);
     try {
       const profile = await this.authService.getProfile(userId);
@@ -99,10 +84,7 @@ export class AuthController {
       console.log('Google authentication callback received');
 
       const { token } = await this.authService.validateOrCreateGoogleUser();
-      console.log(
-        'User successfully authenticated via Google, token generated:',
-        token,
-      );
+      console.log('User successfully authenticated via Google, token generated:', token);
 
       // ตรวจสอบว่า token ถูกสร้างขึ้นมาไหม
       if (!token) {

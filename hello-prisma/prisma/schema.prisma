@@ -1,23 +1,66 @@
-// hello-prisma/prisma/schema.prisma
-
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String      @id @default(uuid())
+  email         String      @unique
+  first_name    String?
+  last_name     String?
+  avatar_url    String?
+  provider      String?
+  created_at    DateTime    @default(dbgenerated("timezone('utc', now())"))
+  name          String?
+  password      String?
+  role          Role?       @default(USER)
+  sosAlerts     SOSAlert[]  @relation("UserSOSAlerts")
+  handledAlerts SOSAlert[]  @relation("HandledBy")
+  sosLogs       SOSLog[]    // เชื่อมโยงกับการเปลี่ยนสถานะ
+
+  @@map("users")
+}
+
+model SOSAlert {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation("UserSOSAlerts", fields: [userId], references: [id])
+  severityGrade    Int       @default(1)
+  emergencyType    String
+  description      String?
+  latitude         Float
+  longitude        Float
+  status           String    @default("pending")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  contactinfo      String?
+  responsetime     DateTime?
+  additionalnotes  String?
+  handledby        String?   // UUID ของผู้ที่รับเคส
+  handledbyUser    User?     @relation("HandledBy", fields: [handledby], references: [id])
+  priority         Int       @default(1)
+  phonenumber      String?
+  incidentstarttime DateTime?
+  sosLogs          SOSLog[]  // เชื่อมโยงกับ log ของการอัปเดตสถานะ
+
+  @@map("SOSAlert")
+}
+
+model SOSLog {
+  id        String   @id @default(uuid())
+  sosId     String
+  sos       SOSAlert @relation(fields: [sosId], references: [id])
+  status    String   // สถานะที่ถูกอัปเดต
+  updatedBy String   // userId ของผู้ที่อัปเดตสถานะ
+  updatedByUser User @relation(fields: [updatedBy], references: [id]) // เพิ่มการเชื่อมโยงกับ User
+  timestamp DateTime @default(now())
+
+  @@map("SOSLogs")  // ใช้ชื่อ table ตามต้องการ
 }
 
 enum Role {
@@ -26,4 +69,3 @@ enum Role {
   HOSPITAL
   RESCUE
 }
-

@@ -68,10 +68,7 @@ export class AuthService {
 
     if (checkError && checkError.code !== 'PGRST116') {
       console.error('❌ [register] Error checking existing email:', checkError);
-      throw new HttpException(
-        'Failed to check existing user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Failed to check existing user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -96,10 +93,7 @@ export class AuthService {
 
     if (error || !data || data.length === 0 || !data[0]) {
       console.error('❌ [register] Register error:', error);
-      throw new HttpException(
-        'Failed to register user',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Failed to register user', HttpStatus.BAD_REQUEST);
     }
 
     const user = data[0];
@@ -114,9 +108,7 @@ export class AuthService {
     return userWithoutPassword;
   }
 
-  async login(
-    dto: LoginDto,
-  ): Promise<{ access_token: string; user: Omit<User, 'password'> }> {
+  async login(dto: LoginDto): Promise<{ access_token: string; user: Omit<User, 'password'> }> {
     console.log('📌 [login] Called with email:', dto.email);
 
     const supabase = this.supabaseService.client;
@@ -129,29 +121,20 @@ export class AuthService {
 
     if (error || !data) {
       console.warn('⚠️ [login] Email not found or error:', error);
-      throw new HttpException(
-        'Invalid email or password',
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new HttpException('Invalid email or password', HttpStatus.UNAUTHORIZED);
     }
 
     const user = data;
 
     if (!user.password) {
       console.error('❌ [login] User has no password set');
-      throw new HttpException(
-        'Password not found for user',
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new HttpException('Password not found for user', HttpStatus.UNAUTHORIZED);
     }
 
     const isPasswordMatch = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordMatch) {
       console.warn('⚠️ [login] Incorrect password');
-      throw new HttpException(
-        'Invalid email or password',
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new HttpException('Invalid email or password', HttpStatus.UNAUTHORIZED);
     }
 
     const payload = {
