@@ -143,3 +143,95 @@ This project handles emergency assistance coordination between users, the 1669 e
 - NestJS + TypeORM
 - MySQL / PostgreSQL
 - JWT Auth + OAuth2 (Google)
+
+
+
+Emergency Care System
+├── Mobile Application
+│   ├── General Users
+│   │   ├── Register/Login (Email, Phone, Google, Facebook, Apple)
+│   │   ├── SOS
+│   │   │   ├── Patient: Severity Grading, Emergency Type, Send Health Info & Location
+│   │   │   ├── Not Patient: Severity Grading, Emergency Type, Send Location
+│   │   ├── Emergency Numbers List (Call Directly)
+│   │   ├── Nearby Hospital (Map, Contact, Call Directly)
+│   ├── 1669 (Emergency Response Center)
+│   │   ├── Receive Alerts
+│   │   ├── View Patient Details (Location, Symptoms, Contact)
+│   │   ├── Update Status & Service Availability
+│   │   ├── Handle & Prioritize Requests
+│   │   ├── Forward Case to Hospital
+│   │   ├── Access Statistics & Reports
+│   ├── Hospitals
+│   │   ├── Receive Alerts from 1669
+│   │   ├── View Patient Details
+│   │   ├── Update Status & Service Availability
+│   │   ├── Handle & Prioritize Requests
+│   │   ├── Coordinate with Rescue Teams
+│   │   ├── Access Statistics & Reports
+│   ├── Rescue Teams
+│   │   ├── Receive Alerts from Hospital
+│   │   ├── View Location
+│   │   ├── Coordinate with Hospitals
+│   │   ├── Update Mission Status
+├── Web Application
+│   ├── 1669
+│   │   ├── Receive Reports
+│   │   ├── View Patient Data
+│   │   ├── Update Status & Service Availability
+│   │   ├── Prioritize Emergencies
+│   │   ├── Forward Cases to Hospitals
+│   │   ├── Access Statistics & Reports
+│   ├── Hospitals
+│   │   ├── Receive Reports from 1669
+│   │   ├── View Patient Data
+│   │   ├── Update Status & Service Availability
+│   │   ├── Prioritize Emergencies
+│   │   ├── Coordinate with Rescue Teams
+│   │   ├── Access Statistics & Reports
+│   ├── Rescue Teams
+│   │   ├── Receive Reports from Hospitals
+│   │   ├── View Location
+│   │   ├── Coordinate with Hospitals
+│   │   ├── Update Mission Status
+├── Backend
+│   ├── API (NestJS)
+│   │   ├── Authentication (OAuth2 via Supabase)
+│   │   ├── SOS Management (Create, Update, Retrieve)
+│   │   ├── Status Updates
+│   │   ├── Hospital & Emergency Number Queries
+│   ├── Database (Supabase PostgreSQL)
+│   │   ├── Tables: Users, SosRequests, PatientStatus, RescueTeamStatus
+│   │   ├── Row-Level Security (RLS)
+│   ├── Realtime (Supabase Realtime + NestJS WebSocket)
+│   │   ├── Send Alerts to 1669, Hospitals, Rescue Teams
+│   │   ├── Update Status in Real-Time
+│   ├── Deployment (Docker)
+
+
+
+
+
+[Mobile App] <--> [Web App]
+   |                 |
+   |                 |
+[Backend (NestJS)]
+   |
+   |-- [API]
+   |     |-- Auth (Supabase OAuth2)
+   |     |-- SOS Endpoints
+   |     |-- Status Endpoints
+   |     |-- Hospital Queries
+   |
+   |-- [Realtime]
+   |     |-- Supabase Realtime (WebSocket)
+   |     |-- NestJS WebSocket (Socket.IO)
+   |
+   |-- [Database]
+   |     |-- Supabase PostgreSQL
+   |     |-- Tables: Users, SosRequests, etc.
+   |     |-- RLS
+   |
+   |-- [Deployment]
+         |-- Docker
+         |-- Render/AWS

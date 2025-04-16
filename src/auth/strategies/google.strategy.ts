@@ -30,7 +30,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: Profile,
     done: VerifyCallback,
   ): Promise<GoogleUser> {
-    const { name, emails, photos } = profile;
+    const name = profile.name;
+    const emails = profile.emails;
+    const photos = profile.photos;
 
     // ข้อมูลที่ใช้จาก profile ของ Google
     const email = emails?.[0]?.value || '';

@@ -107,9 +107,7 @@ describe('SosController', () => {
       mockSupabaseClient.single.mockReturnValueOnce({ data: null, error: new Error('User not found') });
 
       const req = { user: { id: userId } };
-      await expect(controller.createSOS(createSosDto, req)).rejects.toThrowError(
-        `User with ID ${userId} not found`,
-      );
+      await expect(controller.createSOS(createSosDto, req)).rejects.toThrowError(`User with ID ${userId} not found`);
     });
   });
 

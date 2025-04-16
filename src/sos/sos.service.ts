@@ -10,11 +10,7 @@ export class SosService {
     console.log(`Checking user with ID: ${userId}`);
 
     const supabase = this.supabaseService.client;
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const { data: user, error: userError } = await supabase.from('users').select('*').eq('id', userId).single();
 
     if (userError || !user) {
       console.error('❌ [createSosAlert] User check failed:', userError);
@@ -41,11 +37,7 @@ export class SosService {
       incidentstarttime: createSosDto.incidentstarttime ? new Date(createSosDto.incidentstarttime) : null,
     };
 
-    const { data: sosAlert, error } = await supabase
-      .from('SOSAlert')
-      .insert([sosAlertData])
-      .select()
-      .single();
+    const { data: sosAlert, error } = await supabase.from('SOSAlert').insert([sosAlertData]).select().single();
 
     if (error) {
       console.error('❌ [createSosAlert] Failed to insert into Supabase:', error);
@@ -58,9 +50,7 @@ export class SosService {
   async getAll() {
     const supabase = this.supabaseService.client;
 
-    const { data: sosAlerts, error: sosError } = await supabase
-      .from('SOSAlert')
-      .select('*');
+    const { data: sosAlerts, error: sosError } = await supabase.from('SOSAlert').select('*');
 
     if (sosError) {
       console.error('❌ [getAll] Failed to fetch SOS alerts from Supabase:', sosError);
@@ -72,19 +62,16 @@ export class SosService {
       return [];
     }
 
-    const userIds = [...new Set(sosAlerts.map(alert => alert.userid))];
-    const { data: users, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .in('id', userIds);
+    const userIds = [...new Set(sosAlerts.map((alert) => alert.userid))];
+    const { data: users, error: userError } = await supabase.from('users').select('*').in('id', userIds);
 
     if (userError) {
       console.error('❌ [getAll] Failed to fetch users from Supabase:', userError);
       throw new HttpException('Failed to fetch users', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const userMap = new Map(users.map(user => [user.id, user]));
-    const result = sosAlerts.map(alert => ({
+    const userMap = new Map(users.map((user) => [user.id, user]));
+    const result = sosAlerts.map((alert) => ({
       ...alert,
       user: userMap.get(alert.userid) || null,
     }));
@@ -96,11 +83,7 @@ export class SosService {
   async updateStatus(id: string, status: string) {
     const supabase = this.supabaseService.client;
 
-    const { data: existing, error: fetchError } = await supabase
-      .from('SOSAlert')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data: existing, error: fetchError } = await supabase.from('SOSAlert').select('*').eq('id', id).single();
 
     if (fetchError || !existing) {
       console.error('❌ [updateStatus] Failed to fetch SOS alert from Supabase:', fetchError);
